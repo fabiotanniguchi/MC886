@@ -1,11 +1,20 @@
+<<<<<<< Updated upstream
 This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2016/dev) (preloaded format=pdflatex 2016.11.9)  31 AUG 2017 20:52
+=======
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2017.8.31)  31 AUG 2017 20:54
+>>>>>>> Stashed changes
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **report-model.tex
 (./report-model.tex
+<<<<<<< Updated upstream
 LaTeX2e <2015/01/01> patch level 2
 Babel <3.9m> and hyphenation patterns for 3 languages loaded.
+=======
+LaTeX2e <2011/06/27>
+Babel <3.9h> and hyphenation patterns for 3 languages loaded.
+>>>>>>> Stashed changes
 
 ! LaTeX Error: File `IEEEtran.cls' not found.
 
@@ -18,6 +27,7 @@ Enter file name:
          
 l.2 \IEEEoverridecommandlockouts
                                 ^^M
+<<<<<<< Updated upstream
 End of file on the terminal!
 
  
@@ -28,5 +38,17 @@ Here is how much of TeX's memory you used:
  3350 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
  34 hyphenation exceptions out of 8191
+=======
+*** (cannot \read from terminal in nonstop modes)
+
+ 
+Here is how much of TeX's memory you used:
+ 11 strings out of 495004
+ 241 string characters out of 6180662
+ 46034 words of memory out of 5000000
+ 3329 multiletter control sequences out of 15000+600000
+ 3640 words of font info for 14 fonts, out of 8000000 for 9000
+ 16 hyphenation exceptions out of 8191
+>>>>>>> Stashed changes
  10i,0n,7p,65b,8s stack positions out of 5000i,500n,10000p,200000b,80000s
 !  ==> Fatal error occurred, no output PDF file produced!
