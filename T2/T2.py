@@ -12,6 +12,7 @@ from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import cross_val_predict
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
+import cPickle as pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -19,56 +20,104 @@ import logging
 import os
 import pprint
 
-TRAINING_MODEL_FILE = "year-prediction-msd-train.txt"
-TESTING_MODEL_FILE = "year-prediction-msd-test.txt"
+NSIZE = 3
+N_STARTING_FILTERS = 16
+
+NUM_PROCESSES = 4
+
+NUM_TRAIN = 50000
+NUM_TEST = 10000
+
+DATA_PATH = '../cifar-10-batches-py'
 USE_TEST_FILE = False
 
-
-###
-# Loads the training data, returning X and Y.
-###
-def load_model_data(test_file = TRAINING_MODEL_FILE):
-    data = np.loadtxt(open(test_file, 'r'),
-                         dtype={'names': ('year',
-                                          'timbre01', 'timbre02', 'timbre03', 'timbre04', 'timbre05', 'timbre06', 'timbre07', 'timbre08', 'timbre09', 'timbre10', 'timbre11', 'timbre12',
-                                          'timbrec1','timbrec2','timbrec3','timbrec4','timbrec5','timbrec6','timbrec7','timbrec8','timbrec9','timbrec10','timbrec11','timbrec12',
-                                          'timbrec13','timbrec14','timbrec15','timbrec16','timbrec17','timbrec18','timbrec19','timbrec20','timbrec21','timbrec22','timbrec23','timbrec24',
-                                          'timbrec25','timbrec26','timbrec27','timbrec28','timbrec29','timbrec30','timbrec31','timbrec32','timbrec33','timbrec34','timbrec35','timbrec36',
-                                          'timbrec37','timbrec38','timbrec39','timbrec40','timbrec41','timbrec42','timbrec43','timbrec44','timbrec45','timbrec46','timbrec47','timbrec48',
-                                          'timbrec49','timbrec50','timbrec51','timbrec52','timbrec53','timbrec54','timbrec55','timbrec56','timbrec57','timbrec58','timbrec59','timbrec60',
-                                          'timbrec61','timbrec62','timbrec63','timbrec64','timbrec65','timbrec66','timbrec67','timbrec68','timbrec69','timbrec70','timbrec71','timbrec72',
-                                          'timbrec73','timbrec74','timbrec75','timbrec76','timbrec77','timbrec78'
-                                          ),
-                                'formats': (np.integer, np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float,np.float)},
-                        delimiter=',', skiprows=0)
-
-    df = pd.DataFrame(data, columns=[
-                              'timbre01', 'timbre02', 'timbre03', 'timbre04', 'timbre05', 'timbre06', 'timbre07', 'timbre08', 'timbre09', 'timbre10', 'timbre11', 'timbre12',
-                                          'timbrec1','timbrec2','timbrec3','timbrec4','timbrec5','timbrec6','timbrec7','timbrec8','timbrec9','timbrec10','timbrec11','timbrec12',
-                                          'timbrec13','timbrec14','timbrec15','timbrec16','timbrec17','timbrec18','timbrec19','timbrec20','timbrec21','timbrec22','timbrec23','timbrec24',
-                                          'timbrec25','timbrec26','timbrec27','timbrec28','timbrec29','timbrec30','timbrec31','timbrec32','timbrec33','timbrec34','timbrec35','timbrec36',
-                                          'timbrec37','timbrec38','timbrec39','timbrec40','timbrec41','timbrec42','timbrec43','timbrec44','timbrec45','timbrec46','timbrec47','timbrec48',
-                                          'timbrec49','timbrec50','timbrec51','timbrec52','timbrec53','timbrec54','timbrec55','timbrec56','timbrec57','timbrec58','timbrec59','timbrec60',
-                                          'timbrec61','timbrec62','timbrec63','timbrec64','timbrec65','timbrec66','timbrec67','timbrec68','timbrec69','timbrec70','timbrec71','timbrec72',
-                                          'timbrec73','timbrec74','timbrec75','timbrec76','timbrec77','timbrec78'
-                            ]).abs()
-    target = pd.DataFrame(data, columns=["year"])
-    scaler = preprocessing.StandardScaler(with_mean=False).fit(df)
-    return df, target, scaler.transform(df), target["year"].tolist()
+path_set = False
+while not path_set:
+    with open(DATA_PATH) as f:
+        DATASET_PATH = f.read()
+    path_set = True
 
 
+def get_CIFAR10_data(cifar10_dir, num_training=49000, num_validation=1000, num_test=1000):
+    '''
+    Load the CIFAR-10 dataset from disk and perform preprocessing to prepare
+    it for the neural net classifier.
+    '''
+    # Load the raw CIFAR-10 data
+    X_train, y_train, X_test, y_test = load(cifar10_dir)
+
+    # Subsample the data
+    mask = range(num_training, num_training + num_validation)
+    X_val = X_train[mask]
+    y_val = y_train[mask]
+    mask = range(num_training)
+    X_train = X_train[mask]
+    y_train = y_train[mask]
+    mask = range(num_test)
+    X_test = X_test[mask]
+    y_test = y_test[mask]
+
+    X_train = X_train.astype(np.float64)
+    X_val = X_val.astype(np.float64)
+    X_test = X_test.astype(np.float64)
+
+    # Transpose so that channels come first
+    X_train = X_train.transpose(0, 3, 1, 2)
+    X_val = X_val.transpose(0, 3, 1, 2)
+    X_test = X_test.transpose(0, 3, 1, 2)
+
+    mean_image = np.mean(X_train, axis=0)
+    std = np.std(X_train)
+
+    X_train -= mean_image
+    X_val -= mean_image
+    X_test -= mean_image
+
+    X_train /= std
+    X_val /= std
+    X_test /= std
+
+    return {
+        'X_train': X_train, 'y_train': y_train,
+        'X_val': X_val, 'y_val': y_val,
+        'X_test': X_test, 'y_test': y_test,
+        'mean': mean_image, 'std': std
+    }
+
+
+def load_CIFAR_batch(filename):
+    ''' load single batch of cifar '''
+    with open(filename, 'r') as f:
+        datadict = pickle.load(f)
+        X = datadict['data']
+        Y = datadict['labels']
+        X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
+        Y = np.array(Y)
+        return X, Y
+
+
+def load(ROOT):
+    ''' load all of cifar '''
+    xs = []
+    ys = []
+    for b in range(1, 6):
+        f = os.path.join(ROOT, 'data_batch_%d' % (b, ))
+        X, Y = load_CIFAR_batch(f)
+        xs.append(X)
+        ys.append(Y)
+    Xtr = np.concatenate(xs)
+    Ytr = np.concatenate(ys)
+    del X, Y
+    Xte, Yte = load_CIFAR_batch(os.path.join(ROOT, 'test_batch'))
+    return Xtr, Ytr, Xte, Yte
+
 ###
-# Loads the training and testing data.
+# Loads the training and testing data, returning X and Y.
 ###
-def load_training_testing_data(X, Y):
-    # By default load the test data by splitting the training data.
-    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.4, random_state=0, shuffle=True)
-    if (True == USE_TEST_FILE):
-        # Load the test file instead.
-        df, target, x_test, y_test = load_model_data(TESTING_MODEL_FILE)
-        x_train = X
-        y_train = Y
-    return x_train, x_test, y_train, y_test
+def load_data(test_file = TRAINING_MODEL_FILE):
+    data = get_CIFAR10_data(DATASET_PATH,
+                            num_training=NUM_TRAIN, num_validation=0, num_test=NUM_TEST)
+    return data
 
 
 #A helper method for pretty-printing linear models
@@ -97,26 +146,33 @@ def plot_model_values(x_values, y_values):
     plt.show()
 
 
-def predict_linear_model(x_train, y_train, x_test, y_test):
-    lm = linear_model.LinearRegression()
-    model = lm.fit(x_train, y_train)
+def predict_neural_model(x_train, y_train, x_test, y_test):
+    model = MLPClassifier(activation='logistic',solver='sgd',hidden_layer_sizes=(10,15),random_state=1)
+    model.fit(x_train, y_train)
     y_pred = model.predict(x_test)
 
     print("Mean squared error: %.2f"
           % mean_squared_error(y_test, y_pred))
     print('Variance score: %.2f' % r2_score(y_test, y_pred))
-    print("Linear model:", pretty_print_linear(model.coef_))
+    #print("Linear model:", pretty_print_linear(model.coef_))
 
-    fig, ax = plt.subplots()
-    ax.scatter(y_test, y_pred, edgecolors = (0, 0, 0), color = 'red')
-    ax.plot([1920, 2020], [1920, 2020], 'k--', lw = 4)
-    ax.set_xlabel('Measured')
-    ax.set_ylabel('Predicted')
-    plt.show()
+    count = 0
+    for i in range(len(y_pred)):
+        if pred[i]==a[i]:
+            count=count+1
 
-    plt.figure()
-    plt.xlabel("Training examples")
-    plt.ylabel("Score")
+    print('Accuracy score: %.2f' % count / len(y_pred))
+
+    # fig, ax = plt.subplots()
+    # ax.scatter(y_test, y_pred, edgecolors = (0, 0, 0), color = 'red')
+    # ax.plot([1920, 2020], [1920, 2020], 'k--', lw = 4)
+    # ax.set_xlabel('Measured')
+    # ax.set_ylabel('Predicted')
+    # plt.show()
+    #
+    # plt.figure()
+    # plt.xlabel("Training examples")
+    # plt.ylabel("Score")
 
     # train_sizes, train_scores, test_scores = learning_curve(
     #   model, x_train, y_train, train_sizes=[0.2, 0.5, 0.7], cv=4)
@@ -186,61 +242,14 @@ def predict_sgd_model(x_train, y_train, x_test, y_test):
     # plt.show()
 
 
-
-def predict_linear_model_polinomial(x_train, y_train, x_test, y_test):
-    lm = linear_model.LinearRegression()
-    model = make_pipeline(PolynomialFeatures(), lm)
-    model.fit(x_train, y_train)
-    y_pred = model.predict(x_test)
-
-    print("Mean squared error: %.2f"
-          % mean_squared_error(y_test, y_pred))
-    print('Variance score: %.2f' % r2_score(y_test, y_pred))
-
-    fig, ax = plt.subplots()
-    ax.scatter(y_test, y_pred, edgecolors = (0, 0, 0), color = 'red')
-    ax.plot([1920, 2020], [1920, 2020], 'k--', lw = 4)
-    ax.set_xlabel('Measured')
-    ax.set_ylabel('Predicted')
-    plt.show()
-
-    plt.figure()
-    plt.xlabel("Training examples")
-    plt.ylabel("Score")
-
-    train_sizes, train_scores, test_scores = learning_curve(
-      model, x_train, y_train, train_sizes=[0.2, 0.5, 0.7, 1], cv=4)
-    train_scores_mean = np.mean(train_scores, axis=1)
-    train_scores_std = np.std(train_scores, axis=1)
-    test_scores_mean = np.mean(test_scores, axis=1)
-    test_scores_std = np.std(test_scores, axis=1)
-
-    plt.grid()
-    plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
-                     train_scores_mean + train_scores_std, alpha=0.1,
-                     color="r")
-    plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
-                     test_scores_mean + test_scores_std, alpha=0.1, color="g")
-    plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
-             label="Training score")
-    plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
-             label="Cross-validation score")
-
-    plt.legend(loc="best")
-    plt.show()
-
-
 ###
 # Main function, executes the model prediction.
 ###
 def main():
-    data, target, X, Y = load_model_data()
-    x_train, x_test, y_train, y_test = load_training_testing_data(X, Y)
-
-    #plot_model_values(x_test, y_test)
-    #predict_linear_model(x_train, y_train, x_test, y_test)
-    predict_sgd_model(x_train, y_train, x_test, y_test)
-    #predict_linear_model_polinomial(x_train, y_train, x_test, y_test)
+    data = load_data()
+    plot_model_values(x_test, y_test)
+    predict_neural_model(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
+    predict_sgd_model(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
 
 
 ###
