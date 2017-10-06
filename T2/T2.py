@@ -10,6 +10,7 @@ from sklearn.model_selection import learning_curve
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import cross_val_predict
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
 import cPickle as pickle
@@ -25,18 +26,11 @@ N_STARTING_FILTERS = 16
 
 NUM_PROCESSES = 4
 
-NUM_TRAIN = 50000
-NUM_TEST = 10000
+NUM_TRAIN = 10000
+NUM_TEST = 1000
 
-DATA_PATH = '../cifar-10-batches-py'
+DATASET_PATH = 'cifar-10-batches-py'
 USE_TEST_FILE = False
-
-path_set = False
-while not path_set:
-    with open(DATA_PATH) as f:
-        DATASET_PATH = f.read()
-    path_set = True
-
 
 def get_CIFAR10_data(cifar10_dir, num_training=49000, num_validation=1000, num_test=1000):
     '''
@@ -57,14 +51,15 @@ def get_CIFAR10_data(cifar10_dir, num_training=49000, num_validation=1000, num_t
     X_test = X_test[mask]
     y_test = y_test[mask]
 
+
     X_train = X_train.astype(np.float64)
     X_val = X_val.astype(np.float64)
     X_test = X_test.astype(np.float64)
 
     # Transpose so that channels come first
-    X_train = X_train.transpose(0, 3, 1, 2)
-    X_val = X_val.transpose(0, 3, 1, 2)
-    X_test = X_test.transpose(0, 3, 1, 2)
+    # X_train = X_train.transpose(0, 3, 1, 2)
+    # X_val = X_val.transpose(0, 3, 1, 2)
+    # X_test = X_test.transpose(0, 3, 1, 2)
 
     mean_image = np.mean(X_train, axis=0)
     std = np.std(X_train)
@@ -77,11 +72,15 @@ def get_CIFAR10_data(cifar10_dir, num_training=49000, num_validation=1000, num_t
     X_val /= std
     X_test /= std
 
+    X_train = X_train.reshape((num_training, 3072))
+    #X_val = X_train.reshape((num_validation, 3072))
+    X_test = X_test.reshape((num_test, 3072))
+
     return {
-        'X_train': X_train, 'y_train': y_train,
-        'X_val': X_val, 'y_val': y_val,
-        'X_test': X_test, 'y_test': y_test,
-        'mean': mean_image, 'std': std
+        "x_train": X_train, "y_train": y_train,
+        "x_val": X_val, "y_val": y_val,
+        "x_test": X_test, "y_test": y_test,
+        "mean": mean_image, "std": std
     }
 
 
@@ -91,7 +90,7 @@ def load_CIFAR_batch(filename):
         datadict = pickle.load(f)
         X = datadict['data']
         Y = datadict['labels']
-        X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
+        X = X.reshape(10000, 3, 1024).transpose(0, 2, 1).astype("float")
         Y = np.array(Y)
         return X, Y
 
@@ -114,7 +113,7 @@ def load(ROOT):
 ###
 # Loads the training and testing data, returning X and Y.
 ###
-def load_data(test_file = TRAINING_MODEL_FILE):
+def load_data():
     data = get_CIFAR10_data(DATASET_PATH,
                             num_training=NUM_TRAIN, num_validation=0, num_test=NUM_TEST)
     return data
@@ -147,7 +146,7 @@ def plot_model_values(x_values, y_values):
 
 
 def predict_neural_model(x_train, y_train, x_test, y_test):
-    model = MLPClassifier(activation='logistic',solver='sgd',hidden_layer_sizes=(10,15),random_state=1)
+    model = MLPClassifier(activation='logistic',solver='sgd',hidden_layer_sizes=(len(x_train[0])),random_state=1)
     model.fit(x_train, y_train)
     y_pred = model.predict(x_test)
 
@@ -158,10 +157,11 @@ def predict_neural_model(x_train, y_train, x_test, y_test):
 
     count = 0
     for i in range(len(y_pred)):
-        if pred[i]==a[i]:
+        if y_pred[i]==y_test[i]:
             count=count+1
+    acc = count / len(y_pred)
 
-    print('Accuracy score: %.2f' % count / len(y_pred))
+    print('Accuracy score: %.2f' % (acc))
 
     # fig, ax = plt.subplots()
     # ax.scatter(y_test, y_pred, edgecolors = (0, 0, 0), color = 'red')
@@ -208,31 +208,17 @@ def predict_sgd_model(x_train, y_train, x_test, y_test):
         model = sgd.fit(x_train, y_train)
         y_pred = model.predict(x_test)
 
+        count = 0
+        for i in range(len(y_pred)):
+            if y_pred[i]==y_test[i]:
+                count=count+1
+        acc = count / len(y_pred)
+
         print("Mean squared error: %.2f"
               % mean_squared_error(y_test, y_pred))
         print('Variance score: %.2f' % r2_score(y_test, y_pred))
-        print("Linear model:", pretty_print_linear(model.coef_))
-        score[index] = r2_score(y_test, y_pred)
-        train_sizes, train_scores, test_scores = learning_curve(
-          model, x_train, y_train, train_sizes=[0.2, 0.5, 0.7], cv=4)
-        train_scores_mean = np.mean(train_scores, axis=1)
-        train_scores_std = np.std(train_scores, axis=1)
-        test_scores_mean = np.mean(test_scores, axis=1)
-        test_scores_std = np.std(test_scores, axis=1)
-
-        plt.grid()
-        plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
-                         train_scores_mean + train_scores_std, alpha=0.1,
-                         color="r")
-        plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
-                         test_scores_mean + test_scores_std, alpha=0.1, color="g")
-        plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
-                 label="Training score")
-        plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
-                 label="Cross-validation score")
-
-        plt.legend(loc="best")
-        plt.show()
+        #print("Linear model:", pretty_print_linear(model.coef_))
+        print('Accuracy score: %.2f' % (acc))
 
     # fig, ax = plt.subplots()
     # plt.plot(iterations, score, 'o-', color="r",
@@ -247,8 +233,11 @@ def predict_sgd_model(x_train, y_train, x_test, y_test):
 ###
 def main():
     data = load_data()
-    plot_model_values(x_test, y_test)
-    predict_neural_model(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
+    #plot_model_values(data['x_test'], data['y_test'])
+    #predict_neural_model(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
+
+    # Dados estão no formato (50000 linhas, 3072 colunas), com cada coluna sendo um valor de pixel.
+    # Se quiser separar em 3 features de cada um dos canais é só comentar as linhas 75 e 77.
     predict_sgd_model(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
 
 
