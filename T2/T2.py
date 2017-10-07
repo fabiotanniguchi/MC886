@@ -13,7 +13,7 @@ from sklearn.model_selection import cross_val_predict
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
-import cPickle as pickle
+import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -86,8 +86,8 @@ def get_CIFAR10_data(cifar10_dir, num_training=49000, num_validation=1000, num_t
 
 def load_CIFAR_batch(filename):
     ''' load single batch of cifar '''
-    with open(filename, 'r') as f:
-        datadict = pickle.load(f)
+    with open(filename, 'rb') as f:
+        datadict = pickle.load(f, encoding='latin1')
         X = datadict['data']
         Y = datadict['labels']
         X = X.reshape(10000, 3, 1024).transpose(0, 2, 1).astype("float")
