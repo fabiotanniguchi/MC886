@@ -19,8 +19,8 @@ N_STARTING_FILTERS = 16
 
 NUM_PROCESSES = 4
 
-NUM_TRAIN = 10000
-NUM_TEST = 1000
+NUM_TRAIN = 50000
+NUM_TEST = 10000
 
 DATASET_PATH = 'cifar-10-batches-py'
 USE_TEST_FILE = False
@@ -205,7 +205,7 @@ def run_logistic_regression_onevsall(x_train, y_train, x_test, y_test):
             else:
                 y_train_c.append(0)
         
-        logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'ovr', 1, True, -1)
+        logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'ovr', 1, True, 4)
         logreg.fit(x_train, y_train_c)
         
         test_predict = logreg.predict(x_test)
@@ -232,7 +232,7 @@ def run_logistic_regression_softmax(x_train, y_train, x_test, y_test):
     print("-----------------------------------------")
     print("----LOGISTIC REGRESSION USING SOFTMAX----")
     print("Training...")
-    logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'multinomial', 1, True, -1)
+    logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'multinomial', 1, True, 4)
     logreg.fit(x_train, y_train)
 
     print("Testing...")
