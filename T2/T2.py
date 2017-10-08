@@ -3,23 +3,16 @@
 asdasdasdas
 """
 
-from sklearn import linear_model
-from sklearn import preprocessing
 from sklearn.preprocessing import PolynomialFeatures
-from sklearn.model_selection import learning_curve
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import ShuffleSplit
-from sklearn.model_selection import cross_val_predict
 from sklearn.neural_network import MLPClassifier
-from sklearn.pipeline import make_pipeline
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
 import pickle
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import logging
 import os
-import pprint
 
 NSIZE = 3
 N_STARTING_FILTERS = 16
@@ -196,37 +189,26 @@ def predict_neural_model(x_train, y_train, x_test, y_test):
     # plt.show()
 
 
-def predict_sgd_model(x_train, y_train, x_test, y_test):
-    iterations = [500]
-    score = [0, 0, 0, 0, 0]
-    for index, ite in enumerate(iterations):
-        sgd = linear_model.SGDRegressor(alpha=0.0001, average=False, epsilon=0.01, eta0=0.001,
-           fit_intercept=True, l1_ratio=0.15, learning_rate='invscaling',
-           loss='squared_loss', max_iter=ite, penalty='l2',
-           power_t=0.35, random_state=None, shuffle=True, tol=None,
-           verbose=0, warm_start=False)
-        model = sgd.fit(x_train, y_train)
-        y_pred = model.predict(x_test)
+def print_accuracy(validation_accuracy):
+  print ('Testing accuracy: {}'.format(validation_accuracy))
+    
+def accuracy(predictions, labels):
+  return 100.0 * np.sum(predictions == labels) / predictions.shape[0]
 
-        count = 0
-        for i in range(len(y_pred)):
-            if y_pred[i]==y_test[i]:
-                count=count+1
-        acc = count / len(y_pred)
+def run_logistic_regression(x_train, y_train, x_test, y_test):
+  print("-------------------------------")
+  print("--STARTED LOGISTIC REGRESSION--")
+  print("Training...")
+  logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 300, 'ovr', 1, True, -1)
+  logreg.fit(x_train, y_train)
 
-        print("Mean squared error: %.2f"
-              % mean_squared_error(y_test, y_pred))
-        print('Variance score: %.2f' % r2_score(y_test, y_pred))
-        #print("Linear model:", pretty_print_linear(model.coef_))
-        print('Accuracy score: %.2f' % (acc))
-
-    # fig, ax = plt.subplots()
-    # plt.plot(iterations, score, 'o-', color="r",
-    #          label="Training score")
-    # plt.xlabel("Iterations")
-    # plt.ylabel("Score")
-    # plt.show()
-
+  print("Testing...")
+  test_predict = logreg.predict(x_test)
+  
+  valid_accuracy = accuracy(test_predict, y_test)
+  print_accuracy(valid_accuracy)
+  print("--FINISHED LOGISTIC REGRESSION--")
+  print("--------------------------------")
 
 ###
 # Main function, executes the model prediction.
@@ -238,7 +220,8 @@ def main():
 
     # Dados estão no formato (50000 linhas, 3072 colunas), com cada coluna sendo um valor de pixel.
     # Se quiser separar em 3 features de cada um dos canais é só comentar as linhas 75 e 77.
-    predict_sgd_model(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
+    
+    run_logistic_regression(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
 
 
 ###
