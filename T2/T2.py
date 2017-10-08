@@ -188,27 +188,34 @@ def predict_neural_model(x_train, y_train, x_test, y_test):
     # plt.legend(loc="best")
     # plt.show()
 
-
-def print_accuracy(validation_accuracy):
-  print ('Testing accuracy: {}'.format(validation_accuracy))
-    
+###
+# Defines the accuracy of the "logistic regression using SOFTMAX" function
+###
 def accuracy(predictions, labels):
-  return 100.0 * np.sum(predictions == labels) / predictions.shape[0]
-
-def run_logistic_regression(x_train, y_train, x_test, y_test):
-  print("-------------------------------")
-  print("--STARTED LOGISTIC REGRESSION--")
-  print("Training...")
-  logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 300, 'ovr', 1, True, -1)
-  logreg.fit(x_train, y_train)
-
-  print("Testing...")
-  test_predict = logreg.predict(x_test)
+    acertos = 0
+    for x in range(0, len(predictions)):
+        x_probas = predictions[x]
+        max_proba_idx = np.argmax(x_probas)
+        if max_proba_idx == labels[x]:
+            acertos += 1
   
-  valid_accuracy = accuracy(test_predict, y_test)
-  print_accuracy(valid_accuracy)
-  print("--FINISHED LOGISTIC REGRESSION--")
-  print("--------------------------------")
+    my_accuracy = 100.0 * acertos / len(predictions)
+    print ('Testing accuracy: {}%'.format(my_accuracy))
+
+###
+# Run logistic regression using SOFTMAX
+###
+def run_logistic_regression_softmax(x_train, y_train, x_test, y_test):
+    print("-----------------------------------------")
+    print("----LOGISTIC REGRESSION USING SOFTMAX----")
+    print("Training...")
+    logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'ovr', 1, True, -1)
+    logreg.fit(x_train, y_train)
+
+    print("Testing...")
+    test_predict = logreg.predict_proba(x_test)
+    accuracy(test_predict, y_test)
+    print("------------------||---------------------")
 
 ###
 # Main function, executes the model prediction.
@@ -221,7 +228,7 @@ def main():
     # Dados estão no formato (50000 linhas, 3072 colunas), com cada coluna sendo um valor de pixel.
     # Se quiser separar em 3 features de cada um dos canais é só comentar as linhas 75 e 77.
     
-    run_logistic_regression(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
+    run_logistic_regression_softmax(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
 
 
 ###
