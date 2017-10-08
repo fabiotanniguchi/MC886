@@ -187,20 +187,43 @@ def predict_neural_model(x_train, y_train, x_test, y_test):
 
     # plt.legend(loc="best")
     # plt.show()
-
+    
 ###
-# Defines the accuracy of the "logistic regression using SOFTMAX" function
+# Run logistic regression one-vs-all
 ###
-def accuracy(predictions, labels):
-    acertos = 0
-    for x in range(0, len(predictions)):
-        x_probas = predictions[x]
-        max_proba_idx = np.argmax(x_probas)
-        if max_proba_idx == labels[x]:
-            acertos += 1
-  
-    my_accuracy = 100.0 * acertos / len(predictions)
-    print ('Testing accuracy: {}%'.format(my_accuracy))
+def run_logistic_regression_onevsall(x_train, y_train, x_test, y_test):
+    print("--------------------------------------")
+    print("----LOGISTIC REGRESSION ONE-VS-ALL----")
+    
+    accuracy_array = []
+    
+    for c in range(0, 10):
+        y_train_c = []
+        for x in range(0, len(y_train)):
+            if(y_train[x] == c):
+                y_train_c.append(1)
+            else:
+                y_train_c.append(0)
+        
+        logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'ovr', 1, True, -1)
+        logreg.fit(x_train, y_train_c)
+        
+        test_predict = logreg.predict(x_test)
+        acertos = 0
+        for x in range(0, len(test_predict)):
+            if(test_predict[x] == 1):
+                if(c== y_test[x]):
+                    acertos += 1
+            if(test_predict[x] == 0):
+                if(c != y_test[x]):
+                    acertos += 1
+        
+        my_accuracy = 100.0 * acertos / len(test_predict)
+        accuracy_array.append(my_accuracy)
+    
+    accuracy = sum(accuracy_array) / len(accuracy_array)    
+    print ('Testing accuracy: {}%'.format(accuracy))
+    print("----------------||--------------------")
 
 ###
 # Run logistic regression using SOFTMAX
@@ -209,12 +232,21 @@ def run_logistic_regression_softmax(x_train, y_train, x_test, y_test):
     print("-----------------------------------------")
     print("----LOGISTIC REGRESSION USING SOFTMAX----")
     print("Training...")
-    logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'ovr', 1, True, -1)
+    logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'multinomial', 1, True, -1)
     logreg.fit(x_train, y_train)
 
     print("Testing...")
     test_predict = logreg.predict_proba(x_test)
-    accuracy(test_predict, y_test)
+      
+    acertos = 0
+    for x in range(0, len(test_predict)):
+        x_probas = test_predict[x]
+        max_proba_idx = np.argmax(x_probas)
+        if max_proba_idx == y_test[x]:
+            acertos += 1
+  
+    my_accuracy = 100.0 * acertos / len(test_predict)
+    print ('Testing accuracy: {}%'.format(my_accuracy))
     print("------------------||---------------------")
 
 ###
@@ -228,6 +260,7 @@ def main():
     # Dados estão no formato (50000 linhas, 3072 colunas), com cada coluna sendo um valor de pixel.
     # Se quiser separar em 3 features de cada um dos canais é só comentar as linhas 75 e 77.
     
+    run_logistic_regression_onevsall(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
     run_logistic_regression_softmax(data['x_train'], data['y_train'], data['x_test'], data['y_test'])
 
 
