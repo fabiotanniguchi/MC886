@@ -198,6 +198,7 @@ def run_logistic_regression_onevsall(x_train, y_train, x_test, y_test):
     accuracy_array = []
     
     for c in range(0, 10):
+        print("Training one-vs-all for feature {}".format(c))
         y_train_c = []
         for x in range(0, len(y_train)):
             if(y_train[x] == c):
@@ -205,9 +206,10 @@ def run_logistic_regression_onevsall(x_train, y_train, x_test, y_test):
             else:
                 y_train_c.append(0)
         
-        logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'ovr', 1, True, 4)
+        logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'ovr', 1, True, -1)
         logreg.fit(x_train, y_train_c)
         
+        print("Testing one-vs-all for feature {}".format(c))
         test_predict = logreg.predict(x_test)
         acertos = 0
         for x in range(0, len(test_predict)):
@@ -232,7 +234,7 @@ def run_logistic_regression_softmax(x_train, y_train, x_test, y_test):
     print("-----------------------------------------")
     print("----LOGISTIC REGRESSION USING SOFTMAX----")
     print("Training...")
-    logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'multinomial', 1, True, 4)
+    logreg = LogisticRegression('l2', False, 0.0001, 1.0, True, 1, None, None, 'saga', 100, 'multinomial', 1, True, -1)
     logreg.fit(x_train, y_train)
 
     print("Testing...")

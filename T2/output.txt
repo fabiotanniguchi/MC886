@@ -1,0 +1,54 @@
+--------------------------------------
+----LOGISTIC REGRESSION ONE-VS-ALL----
+Training one-vs-all for feature 0
+max_iter reached after 216 seconds
+Testing one-vs-all for feature 0
+D:\Anaconda3\lib\site-packages\sklearn\linear_model\sag.py:326: ConvergenceWarning: The max_iter was reached which means the coef_ did not converge
+  "the coef_ did not converge", ConvergenceWarning)
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+Training one-vs-all for feature 1
+max_iter reached after 214 seconds
+Testing one-vs-all for feature 1
+Training one-vs-all for feature 2
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+max_iter reached after 217 seconds
+Testing one-vs-all for feature 2
+Training one-vs-all for feature 3
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+max_iter reached after 214 seconds
+Testing one-vs-all for feature 3
+Training one-vs-all for feature 4
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+max_iter reached after 213 seconds
+Testing one-vs-all for feature 4
+Training one-vs-all for feature 5
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+max_iter reached after 213 seconds
+Testing one-vs-all for feature 5
+Training one-vs-all for feature 6
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+max_iter reached after 215 seconds
+Testing one-vs-all for feature 6
+Training one-vs-all for feature 7
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+max_iter reached after 220 seconds
+Testing one-vs-all for feature 7
+Training one-vs-all for feature 8
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.7min finished
+max_iter reached after 220 seconds
+Testing one-vs-all for feature 8
+Training one-vs-all for feature 9
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.7min finished
+max_iter reached after 217 seconds
+Testing one-vs-all for feature 9
+Testing accuracy: 90.28800000000001%
+----------------||--------------------
+-----------------------------------------
+----LOGISTIC REGRESSION USING SOFTMAX----
+Training...
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed:  3.6min finished
+max_iter reached after 1597 seconds
+Testing...
+[Parallel(n_jobs=-1)]: Done   1 out of   1 | elapsed: 26.6min finished
+Testing accuracy: 38.97%
+------------------||---------------------
