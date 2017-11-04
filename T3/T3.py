@@ -3,19 +3,11 @@
 asdasdasdas
 """
 
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import mean_squared_error, r2_score, accuracy_score
-from sklearn.metrics import confusion_matrix
 import itertools
-import cPickle as pickle
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import logging
-import os
+from sklearn.metrics.pairwise import pairwise_distances
 
 
 # Activates Verbose on all models.
@@ -24,20 +16,52 @@ DEBUG = 0
 # Name of the dataset directory.
 DATASET_PATH = 'documents/data.csv'
 
+# CSV FILE HAS 19924 ROWS AND 2209 COLUMNS
+# EACH ROW REPRESENTS A DOCUMENT
 
+def kMedoids(D, k, tmax=100):
+    # determine dimensions of distance matrix D
+    m, n = D.shape
+
+    if k > n:
+        raise Exception('too many medoids')
+    # randomly initialize an array of k medoid indices
+    M = np.arange(n)
+    np.random.shuffle(M)
+    M = np.sort(M[:k])
+
+    # create a copy of the array of medoid indices
+    Mnew = np.copy(M)
+
+    # initialize a dictionary to represent clusters
+    C = {}
+    for t in range(tmax):
+        # determine clusters, i. e. arrays of data indices
+        J = np.argmin(D[:,M], axis=1)
+        for kappa in range(k):
+            C[kappa] = np.where(J==kappa)[0]
+        # update cluster medoids
+        for kappa in range(k):
+            J = np.mean(D[np.ix_(C[kappa],C[kappa])],axis=1)
+            j = np.argmin(J)
+            Mnew[kappa] = C[kappa][j]
+        np.sort(Mnew)
+        # check for convergence
+        if np.array_equal(M, Mnew):
+            break
+        M = np.copy(Mnew)
+    else:
+        # final update of cluster memberships
+        J = np.argmin(D[:,M], axis=1)
+        for kappa in range(k):
+            C[kappa] = np.where(J==kappa)[0]
+
+    # return results
+    return M, C
 
 def load_model_data(num_rows = 0, num_features = 0, ignore_features=[]):
     features = np.loadtxt(open(DATASET_PATH, 'rb'), delimiter=',', skiprows=1)
-    if (num_rows != 0):
-        features = features[range(num_rows)]
-
-    if (num_features != 0):
-        features = features[:, range(num_features)]
-
-    for i in range(len(ignore_features)):
-        features = np.delete(features, i, axis=1)
-
-    #features = pd.DataFrame(data).abs()
+    
     return features
 
 
@@ -117,8 +141,26 @@ def accuracy(y_test, y_pred):
 # Main function, executes the model prediction.
 ###
 def main():
-    features =  load_model_data(100, 10, [0, 1, 2, 3, 4, 5])
-    plot_model_values(features)
+    features = load_model_data(100, 10, [0, 1, 2, 3, 4])
+    #plot_model_values(features)
+    
+    # distance matrix
+    d = pairwise_distances(features, metric='euclidean')
+    
+    # split into 2 clusters
+    M, C = kMedoids(d, 10)
+
+    print('medoids:')
+    for point_idx in M:
+        print( features[point_idx] )
+
+    print('')
+    print('clustering result:')
+    for label in C:
+        for point_idx in C[label]:
+            print('label {0}:　{1}'.format(label, features[point_idx]))
+    
+    
     #y_pred = run_logistic_regression_onevsall(x_train, y_train, x_test, y_test)
     #y_pred = run_logistic_regression_softmax(x_train, y_train, x_test, y_test)
     #y_pred = run_simple_neural_network_model(x_train, y_train, x_test, y_test)
