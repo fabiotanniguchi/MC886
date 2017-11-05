@@ -61,7 +61,6 @@ def kMedoids(D, k, tmax=100):
 
 def load_model_data(num_rows = 0, num_features = 0, ignore_features=[]):
     features = np.loadtxt(open(DATASET_PATH, 'rb'), delimiter=',', skiprows=1)
-    
     return features
 
 
@@ -145,22 +144,29 @@ def main():
     #plot_model_values(features)
     
     # distance matrix
-    d = pairwise_distances(features, metric='euclidean')
+    distanceVector = pairwise_distances(features, metric='euclidean')
     
     # split into 2 clusters
-    M, C = kMedoids(d, 10)
+    M, C = kMedoids(distanceVector, 10)
 
-    print('medoids:')
-    for point_idx in M:
-        print( features[point_idx] )
+    #print('medoids:')
+    #for point_idx in M:
+        #print( point_idx )
 
-    print('')
-    print('clustering result:')
-    for label in C:
-        for point_idx in C[label]:
-            print('label {0}:　{1}'.format(label, features[point_idx]))
-    
-    
+    #print('')
+    #print('clustering result:')
+    #for label in C:
+        
+      #  group = []
+      #  i = 0
+      #  for point_idx in C[label]:
+      #      #print('label {0}:　{1}'.format(label, point_idx))
+        
+      #  print(group)
+      #  distanceVector = pairwise_distances(group, metric='euclidean')
+      #  average = np.mean(distanceVector)
+      #  print('Average distance for label is {0}', average)
+        
     #y_pred = run_logistic_regression_onevsall(x_train, y_train, x_test, y_test)
     #y_pred = run_logistic_regression_softmax(x_train, y_train, x_test, y_test)
     #y_pred = run_simple_neural_network_model(x_train, y_train, x_test, y_test)
